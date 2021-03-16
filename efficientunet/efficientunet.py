@@ -74,11 +74,11 @@ class EfficientUnet(nn.Module):
         self.double_conv3 = double_conv(self.size[2], 128)
         self.up_conv4 = up_conv(128, 64)
         self.double_conv4 = double_conv(self.size[3], 64)
-
+        self.up_conv_input = up_conv(64, 32)
         if self.concat_input:
-            self.up_conv_input = up_conv(64, 32)
             self.double_conv_input = double_conv(self.size[4], 32)
-
+        else:
+            self.double_conv_input = double_conv(self.size[4]-3, 32)
         self.final_conv = nn.Conv2d(self.size[5], out_channels, kernel_size=1)
 
     @property
@@ -117,12 +117,12 @@ class EfficientUnet(nn.Module):
         x = self.up_conv4(x)
         x = torch.cat([x, blocks.popitem()[1]], dim=1)
         x = self.double_conv4(x)
-
+        x = self.up_conv_input(x)
         if self.concat_input:
-            x = self.up_conv_input(x)
+            
             x = torch.cat([x, input_], dim=1)
-            x = self.double_conv_input(x)
-
+            
+        x = self.double_conv_input(x)
         x = self.final_conv(x)
 
         return x
